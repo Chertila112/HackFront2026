@@ -3,7 +3,7 @@ import { authSessionSchema } from '../schemas/auth'
 import { useAuth } from '../stores/auth'
 import { AUTH_SESSION_PATH } from './endpoints'
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
 interface ErrorPayload {
   message?: string
