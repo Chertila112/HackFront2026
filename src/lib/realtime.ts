@@ -13,6 +13,8 @@ import { queryClient } from './queryClient'
 const HUB_PATH = '/hubs/analytics'
 const RECONNECT_DELAYS_MS = [0, 2_000, 5_000, 10_000, 30_000]
 
+// Одно подключение на всё приложение: startPromise дедуплицирует параллельные
+// вызовы startRealtime(), пока рукопожатие ещё идёт.
 let connection: signalR.HubConnection | null = null
 let startPromise: Promise<void> | null = null
 
@@ -75,6 +77,8 @@ function buildConnection(): signalR.HubConnection {
 function registerHandlers(next: signalR.HubConnection): void {
   next.on('ModelRecalculated', handleModelRecalculated)
   next.on('CustomerRiskUpdated', handleCustomerRiskUpdated)
+  // После реконнекта — полный перезапрос таблицы: SignalR не хранит события,
+  // случившиеся во время обрыва, поэтому кэш мог протухнуть.
   next.onreconnected(() => {
     resetCustomers()
   })
@@ -94,6 +98,8 @@ async function startConnection(retryOnUnauthorized = true): Promise<void> {
   } catch (error) {
     if (!retryOnUnauthorized || !isUnauthorizedError(error)) return
 
+    // Access-токен мог протухнуть к моменту рукопожатия — обновляем по
+    // refresh-куке и стартуем ровно один раз повторно, чтобы не зациклиться.
     try {
       await fetchSession()
     } catch {

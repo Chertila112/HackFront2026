@@ -33,12 +33,14 @@ bun run preview    # предпросмотр сборки
 ## Как устроено
 
 - `src/api/` — эндпоинты и fetch-обёртка: Bearer-токен, авто-refresh при 401, zod-валидация ответов
-- `src/schemas/` + `src/types/` — zod-схемы и выведенные из них типы (`auth`, `customers`, `realtime`)
+- `src/schemas/` + `src/types/` — zod-схемы и выведенные из них типы (`auth`, `customers`, `realtime`, `settings`)
+- `src/composables/` — `useCustomerFilters` (поиск, фильтры риска, сортировка) и `useDebouncedRef` (общий дебаунс)
 - `src/stores/auth.ts` — сессия в памяти + `sessionStorage`; после перезагрузки восстанавливается без запросов, валидация фоновым `GET /auth/me`
-- `src/views/HomeView.vue` — таблица клиентов: сортировка по заголовкам (`cursorOn`), пагинация «Загрузить ещё» (`cursorNext`)
+- `src/views/HomeView.vue` — тулбар фильтров и состояние загрузки; сама таблица — в `src/components/CustomersTable.vue`
+- `src/lib/format.ts` — форматирование денег (еврокопейки → EUR)
 - `src/lib/realtime.ts` — SignalR-хаб `/hubs/analytics`: `ModelRecalculated` → сброс списка на первую страницу, `CustomerRiskUpdated` → подмена строк по `id`, после реконнекта полный перезапрос
 - `src/layouts/AppLayout.vue` — шапка, навигация, logout
 
-Маршруты: `/login`, `/register`, `/` (таблица), `/profile` — защищены navigation guard.
+Маршруты: `/login`, `/register`, `/` (таблица), `/analytics` — защищены navigation guard.
 
 Спецификация API: `v1.yaml`. Контракт realtime: `SIGNALR.md`.
