@@ -1,7 +1,13 @@
 import { z } from 'zod'
-import { authSessionSchema } from '../schemas/auth'
-import type { AuthSession, LoginCredentials } from '../types/auth'
-import { AUTH_LOGIN_PATH, AUTH_LOGOUT_PATH, AUTH_REGISTER_PATH, AUTH_SESSION_PATH } from './endpoints'
+import { authSessionSchema, userSchema } from '../schemas/auth'
+import type { AuthSession, LoginCredentials, User } from '../types/auth'
+import {
+  AUTH_LOGIN_PATH,
+  AUTH_LOGOUT_PATH,
+  AUTH_ME_PATH,
+  AUTH_REGISTER_PATH,
+  AUTH_SESSION_PATH,
+} from './endpoints'
 import { apiRequest } from './http'
 
 export function login(credentials: LoginCredentials): Promise<AuthSession> {
@@ -10,6 +16,10 @@ export function login(credentials: LoginCredentials): Promise<AuthSession> {
     body: credentials,
     auth: false,
   })
+}
+
+export function fetchMe(): Promise<User> {
+  return apiRequest(AUTH_ME_PATH, userSchema)
 }
 
 export function fetchSession(): Promise<AuthSession> {

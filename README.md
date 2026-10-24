@@ -1,6 +1,6 @@
 # HackFront 2026
 
-SPA-заготовка на Vue 3 + Vite + TypeScript с авторизацией, глобальным состоянием пользователя и mock-API для локальной разработки.
+SPA на Vue 3 + Vite + TypeScript с авторизацией, глобальным состоянием пользователя и таблицей клиентов с оценкой риска и курсорной пагинацией.
 
 Access-токен хранится только в памяти приложения. Refresh-токен приходит в HttpOnly cookie и недоступен JavaScript.
 
@@ -27,20 +27,19 @@ bun run dev
 http://localhost:5173
 ```
 
-Демо-учётные записи:
+API-URL задаётся в `.env.local`:
 
-| Username | Пароль |
-|---|---|
-| `demo` | `demo1234` |
-| `user` | `user1234` |
+```bash
+VITE_API_BASE_URL=https://hack-analyzer.ddns.net:3000
+```
 
 ## Команды
 
 ```bash
-bun run dev        # dev-сервер с mock-API
+bun run dev        # dev-сервер
 bun run typecheck  # проверка типов через vue-tsc
 bun run build      # typecheck + production-сборка
-bun run preview    # предпросмотр сборки, mock-API тоже работает
+bun run preview    # предпросмотр сборки
 ```
 
 ## Структура проекта
@@ -48,19 +47,23 @@ bun run preview    # предпросмотр сборки, mock-API тоже р
 ```text
 .
 ├── index.html              # HTML-точка входа, подключает src/main.ts
-├── vite.config.ts          # Vite + плагин mock-API
-├── mock-api.ts             # mock-сервер: login, refresh, logout
+├── vite.config.ts          # Vite + Vue-плагин
 ├── tsconfig.json           # настройки TypeScript
+├── v1.yaml                 # OpenAPI-спецификация backend
 └── src
     ├── main.ts             # bootstrap сессии и создание приложения
     ├── App.vue             # корневой RouterView + реакция на истёкшую сессию
     ├── style.css           # глобальные переменные и общие классы
     ├── api
-    │   ├── endpoints.ts    # пути auth-эндпоинтов
-    │   ├── auth.ts         # login, fetchSession, logout
+    │   ├── endpoints.ts    # пути API-эндпоинтов
+    │   ├── auth.ts         # login, register, fetchSession, logout
+    │   ├── customers.ts    # fetchCustomers, fetchCustomer
     │   └── http.ts         # fetch-обёртка, Bearer, авто-refresh
+    ├── components
+    │   └── AuthSplit.vue   # разделённый экран входа/регистрации
     ├── schemas
-    │   └── auth.ts         # Zod-схемы и типы из z.infer
+    │   ├── auth.ts         # Zod-схемы auth и типы из z.infer
+    │   └── customers.ts    # Zod-схемы клиентов и query-параметров
     ├── stores
     │   └── auth.ts         # глобальное состояние пользователя
     ├── router
@@ -69,10 +72,12 @@ bun run preview    # предпросмотр сборки, mock-API тоже р
     │   └── AppLayout.vue   # общая шапка и навигация
     ├── views
     │   ├── LoginView.vue   # экран входа
-    │   ├── HomeView.vue    # минимальная главная
+    │   ├── RegisterView.vue# экран регистрации
+    │   ├── HomeView.vue    # таблица клиентов, «Загрузить ещё»
     │   └── ProfileView.vue # профиль и статус сессии
     └── types
         ├── auth.ts         # реэкспорт типов из Zod-схем
+        ├── customers.ts    # реэкспорт типов из Zod-схем
         └── vue-router.d.ts # типизация meta маршрутов
 ```
 
@@ -82,13 +87,13 @@ bun run preview    # предпросмотр сборки, mock-API тоже р
 
 В `src/main.ts`:
 
-1. Выполняется `GET /api/v1/auth/refresh` с `credentials: 'include'`.
-2. Если cookie валидна, backend возвращает `accessToken`, `expiresAt` и `user`, а также обновляет cookie.
-3. Сессия сохраняется в store.
-4. Создаётся Vue-приложение, устанавливаются `router` и `VueQueryPlugin`.
-5. Приложение монтируется в `#app`.
+1. Пытаемся восстановить сессию из `sessionStorage` (`restoreSession()` в сторе: Zod-валидация + проверка `expiresAt`).
+2. Если сохранённая сессия валидна и не истекла — восстанавливаем её в store **без единого сетевого запроса**.
+3. Иначе выполняется один `GET /api/v1/auth/refresh` с `credentials: 'include'`; при успехе сессия сохраняется в store и в `sessionStorage`.
+4. Создаётся Vue-приложение, устанавливаются `router` и `VueQueryPlugin`, приложение монтируется в `#app`.
+5. Если сессия есть, фоном выполняется `GET /api/v1/auth/me` для валидации токена и обновления данных пользователя (не блокирует рендер).
 
-Если активной сессии нет, запрос завершается `401`, store остаётся пустым, а navigation guard переводит на `/login`.
+Если активной сессии нет, refresh завершается `401`, store остаётся пустым, а navigation guard переводит на `/login`. Если фоновый `/auth/me` получил `401` и авто-refresh не спас — `http.ts` очищает сессию, выбрасывает `auth:session-expired`, и `App.vue` переводит на `/login`.
 
 `src/App.vue` содержит только `<RouterView />` и слушает событие `auth:session-expired`. Если обновить сессию не удалось, приложение очищает кэш и переводит пользователя на `/login`.
 
@@ -142,10 +147,11 @@ interface User {
 
 Методы:
 
-- `setSession(session)` — сохранить access-токен и пользователя;
-- `clearSession()` — полностью очистить сессию.
+- `setSession(session)` — сохранить access-токен и пользователя в store и `sessionStorage`;
+- `clearSession()` — полностью очистить сессию (store + `sessionStorage`);
+- `restoreSession()` — прочитать сессию из `sessionStorage`, проверить через `authSessionSchema` и `expiresAt`; при бите или истечении чистит storage и возвращает `null`.
 
-Состояние не сохраняется в `localStorage`. После перезагрузки страницы сессия восстанавливается через cookie и `GET /api/v1/auth/refresh`.
+После перезагрузки страницы сессия восстанавливается из `sessionStorage` без сетевых запросов; если сохранённого токена нет или он истёк — один `GET /api/v1/auth/refresh`.
 
 ## Авторизация и токены
 
@@ -173,6 +179,8 @@ Authorization: Bearer <accessToken>
 Для публичных запросов, например логина, передаётся `auth: false`.
 
 ### Восстановление и обновление сессии
+
+Access-токен переживает перезагрузку страницы в `sessionStorage` (ключ `hackback_session`). При bootstrap сначала читается storage: если сессия валидна и не истекла, сеть не трогается, а фоновый `GET /api/v1/auth/me` подтверждает токен (при 401 авто-refresh попытается обновить его сам).
 
 Refresh-токен не передаётся в JSON и не читается из JavaScript. Он хранится в HttpOnly cookie, поэтому все запросы выполняются с:
 
@@ -218,7 +226,9 @@ credentials: 'include'
 `src/api/auth.ts` содержит типизированные функции:
 
 - `login(credentials)` — вход по username и паролю;
-- `fetchSession()` — восстановление сессии и обновление access-токена;
+- `register(credentials)` — создание аккаунта;
+- `fetchMe()` — текущий пользователь по access-токену (`GET /api/v1/auth/me`);
+- `fetchSession()` — восстановление сессии и обновление access-токена (`/auth/refresh`, используется только когда в `sessionStorage` нет валидного токена);
 - `logout()` — завершение сессии.
 
 Пути вынесены в `src/api/endpoints.ts`.
@@ -237,112 +247,11 @@ Zod используется на границах приложения:
 
 | Граница | Что проверяется |
 |---|---|
-| Форма логина | `loginCredentialsSchema` перед отправкой |
-| Ответ логина | `authSessionSchema` в `apiRequest` |
-| Ответ refresh | `authSessionSchema` в `apiRequest` |
-| Mock login | тело запроса через `loginCredentialsSchema` |
-| Mock refresh | cookie и серверная сессия |
+| Форма логина/регистрации | `loginCredentialsSchema` перед отправкой |
+| Ответ login/register/refresh | `authSessionSchema` в `apiRequest` |
+| Ответ `GET /api/v1/customers` | `customersPageSchema` в `apiRequest` |
 
-Если сервер вернул данные неправильной структуры, `apiRequest` выбрасывает `ApiError` с сообщением «Некорректный ответ сервера». Mock-API возвращает `422` и список ошибок по полям в формате Zod.
-
-## Mock-API
-
-`mock-api.ts` — Vite-плагин, который подключается в `vite.config.ts`.
-
-Работает в:
-
-- `bun run dev`;
-- `bun run preview`.
-
-В production-сборке mock отсутствует.
-
-Mock хранит активные сессии в памяти процесса. После перезапуска dev-сервера старые cookie становятся недействительными.
-
-### Cookie
-
-Mock устанавливает cookie:
-
-```text
-refresh_token=<token>; HttpOnly; SameSite=Lax; Path=/api/v1/auth; Max-Age=2592000
-```
-
-Флаг `Secure` добавляется, если запрос пришёл с `X-Forwarded-Proto: https`. В реальном backend `Secure` должен быть включён всегда для HTTPS.
-
-### `POST /api/v1/auth/login`
-
-Тело:
-
-```json
-{
-  "username": "demo",
-  "password": "demo1234"
-}
-```
-
-Успешный ответ:
-
-```json
-{
-  "accessToken": "mock-access-...",
-  "expiresAt": "2026-10-23T19:47:00.000Z",
-  "user": {
-    "id": "usr_demo",
-    "username": "demo"
-  }
-}
-```
-
-Дополнительно устанавливается HttpOnly cookie с refresh-токеном.
-
-Ошибки:
-
-| Код | Причина |
-|---|---|
-| `400` | некорректный JSON |
-| `401` | неверный username или пароль |
-| `405` | метод не `POST` |
-| `422` | данные не прошли Zod-валидацию |
-
-### `GET /api/v1/auth/refresh`
-
-GET-эндпоинт для восстановления и обновления сессии.
-
-Refresh-токен читается из cookie. При успехе mock:
-
-1. Проверяет сессию.
-2. Удаляет старый refresh-токен.
-3. Создаёт новый refresh-токен.
-4. Устанавливает новую cookie.
-5. Возвращает `accessToken`, `expiresAt` и `user`.
-
-Успешный ответ:
-
-```json
-{
-  "accessToken": "mock-access-...",
-  "expiresAt": "2026-10-23T19:47:00.000Z",
-  "user": {
-    "id": "usr_demo",
-    "username": "demo"
-  }
-}
-```
-
-Ошибки:
-
-| Код | Причина |
-|---|---|
-| `401` | cookie отсутствует или сессия недействительна |
-| `405` | метод не `GET` |
-
-### `POST /api/v1/auth/logout`
-
-Удаляет серверную сессию, очищает cookie и возвращает `204`.
-
-| Код | Причина |
-|---|---|
-| `204` | сессия завершена |
-| `405` | метод не `POST` |
+Если сервер вернул данные неправильной структуры, `apiRequest` выбрасывает `ApiError` с сообщением «Некорректный ответ сервера».
 
 ## TanStack Query
 
@@ -361,7 +270,7 @@ Refresh-токен читается из cookie. При успехе mock:
 }
 ```
 
-Сейчас TanStack Query используется для mutation логина. При выходе и при истечении сессии кэш очищается через `queryClient.clear()`.
+Сейчас TanStack Query используется для mutation логина/регистрации и `useInfiniteQuery` в `HomeView` для курсорной пагинации клиентов (`fetchNextPage` → «Загрузить ещё»). При выходе и при истечении сессии кэш очищается через `queryClient.clear()`.
 
 ## Стили
 
@@ -431,13 +340,10 @@ VITE_API_BASE_URL=https://api.example.com
 
 Текущая реализация — учебная заготовка:
 
-- access-токен хранится в памяти и исчезает при перезагрузке; сессия восстанавливается через cookie;
+- access-токен хранится в памяти и `sessionStorage`; `sessionStorage` читаем при XSS, зато перезагрузка не требует refresh-ротации; при закрытии вкладки токен исчезает;
 - refresh-токен недоступен JavaScript, но при cross-site сценарии нужна отдельная CSRF-защита;
-- mock-сессии хранятся в памяти, не имеют срока жизни и сбрасываются при перезапуске dev-сервера;
-- mock ротирует refresh-токен, но не реализует reuse detection;
 - при истечении сессии выполняется переход на логин, но незавершённые запросы могут завершиться ошибкой;
 - несколько вкладок могут одновременно обновлять сессию; production-backend должен поддерживать grace period или другую защиту от гонки ротации;
-- mock-API доступен только в dev/preview, в production нужен реальный backend;
 - Zod увеличивает размер клиентского бандла; при жёстких требованиях к размеру можно рассмотреть `zod/mini`.
 
 ## Проверка
