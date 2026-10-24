@@ -1,8 +1,9 @@
 import {
-  customerSchema,
+  customerDetailSchema,
   customersPageSchema,
   customersQuerySchema,
   type Customer,
+  type CustomerDetail,
   type CustomersPage,
   type CustomersQuery,
 } from '../schemas/customers'
@@ -19,7 +20,6 @@ function buildCustomersSearch(query: Partial<CustomersQuery>): string {
     }
   }
 
-  console.log(params.toString())
   return params.toString()
 }
 
@@ -34,6 +34,8 @@ export function fetchCustomers(
   )
 }
 
-export function fetchCustomer(id: Customer['id']): Promise<Customer> {
-  return apiRequest(customerPath(id), customerSchema)
+export function fetchCustomerDetail(
+  id: Customer['id'],
+): Promise<CustomerDetail> {
+  return apiRequest(customerPath(id), customerDetailSchema)
 }

@@ -2,6 +2,7 @@
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { fetchCustomers } from '../api/customers'
+import CustomerDetailModal from '../components/CustomerDetailModal.vue'
 import CustomersTable from '../components/CustomersTable.vue'
 import ModelSettingsModal from '../components/ModelSettingsModal.vue'
 import { useCustomerFilters } from '../composables/useCustomerFilters'
@@ -22,6 +23,7 @@ const {
 } = useCustomerFilters()
 
 const isSettingsOpen = ref(false)
+const detailsCustomerId = ref<number | null>(null)
 
 // Смена сортировки/фильтров подменяет queryKey целиком: курсор валиден только
 // в рамках своей сортировки и фильтров, поэтому страницы начинаются с null.
@@ -122,6 +124,7 @@ function retry(): void {
             :sort-field="sortField"
             :sort-direction="sortDirection"
             @toggle-sort="toggleSort"
+            @open-details="detailsCustomerId = $event"
           />
 
           <p v-if="isInitialLoading" class="table-empty muted">
@@ -158,6 +161,12 @@ function retry(): void {
     </div>
 
     <ModelSettingsModal :open="isSettingsOpen" @close="isSettingsOpen = false" />
+
+    <CustomerDetailModal
+      :open="detailsCustomerId !== null"
+      :customer-id="detailsCustomerId"
+      @close="detailsCustomerId = null"
+    />
   </section>
 </template>
 

@@ -20,19 +20,9 @@ const TABLE_COLUMNS: TableColumn[] = [
   { label: 'Бонус', numeric: true },
   { label: 'Пополнено', sortField: 'totalReplenished', numeric: true },
   { label: 'Оценка риска', sortField: 'riskScore', numeric: true },
-  { label: 'Статус' },
   { label: 'Доход под риском', numeric: true },
-  { label: 'Причины' },
 ]
 
-const STATUS_LABELS: Record<Customer['status'], string> = {
-  active: 'Активен',
-  suspended: 'Приостановлен',
-  prolong_wait: 'Ждёт продления',
-  deleted: 'Удалён',
-  blocked: 'Заблокирован',
-  insufficient_data: 'Мало данных',
-}
 
 const props = defineProps<{
   rows: Customer[]
@@ -42,6 +32,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'toggle-sort': [field: CustomerSortField]
+  'open-details': [id: Customer['id']]
 }>()
 
 function isSorted(column: TableColumn): boolean {
@@ -99,7 +90,15 @@ function onHeaderClick(column: TableColumn): void {
     <tbody>
       <tr v-for="customer in rows" :key="customer.id">
         <td class="id-cell">{{ customer.id }}</td>
-        <td class="email">{{ customer.email }}</td>
+        <td class="email">
+          <button
+            type="button"
+            class="email-link"
+            @click="emit('open-details', customer.id)"
+          >
+            {{ customer.email }}
+          </button>
+        </td>
         <td class="num">{{ formatMoney(customer.balance) }}</td>
         <td class="num">{{ formatMoney(customer.withdrawBalance) }}</td>
         <td class="num">
@@ -117,18 +116,7 @@ function onHeaderClick(column: TableColumn): void {
         <td class="num">
           {{ customer.riskScore === null ? '—' : customer.riskScore }}
         </td>
-        <td>
-          <span
-            class="badge status-badge"
-            :class="`status--${customer.status}`"
-          >
-            {{ STATUS_LABELS[customer.status] }}
-          </span>
-        </td>
         <td class="num">{{ formatMoney(customer.revenueAtRisk) }}</td>
-        <td class="reasons">
-          {{ customer.primaryReasons.join('; ') }}
-        </td>
       </tr>
     </tbody>
   </table>
@@ -210,6 +198,20 @@ td.num {
 .email {
   color: var(--text-h);
   white-space: nowrap;
+}
+
+.email-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.email-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 .bonus-cell {
