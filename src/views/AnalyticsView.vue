@@ -9,7 +9,27 @@ const summaryQuery = useQuery({
   queryFn: fetchAnalyticsSummary,
 })
 
+
 const summary = computed(() => summaryQuery.data.value)
+
+const CURRENCY_LABELS = [
+  { key: "EUR_CENTS", label: "Евроценты" },
+  { key: "RUB", label: "Российский рубль" },
+  { key: "USD", label: "Доллары США" },
+]
+
+// Незнакомый код показываем как есть, чтобы не солгать подписью.
+const currencyLabel = computed(() => {
+  const code = summary.value?.financials.currency
+
+  return (
+    CURRENCY_LABELS.find((item) => item.key === code)?.label ?? code ?? ''
+  )
+})
+
+const analyticsCurrency = computed(
+  () => summary.value?.financials.currency ?? 'EUR_CENTS',
+)
 
 const RISK_LEVELS = [
   { key: 'high', label: 'Высокий риск' },
@@ -134,12 +154,7 @@ function formatDateTime(iso: string): string {
 <template>
   <section class="page">
     <div class="page-head">
-      <p class="eyebrow">Аналитика</p>
-      <h1>Сводка по оттоку</h1>
-      <p class="lead">
-        Распределение клиентов по уровням риска, деньги под риском и динамика
-        оттока по модели.
-      </p>
+      <h1 class="main-label">Аналитика</h1>
     </div>
 
     <p v-if="summaryQuery.isPending.value" class="muted">
@@ -165,7 +180,7 @@ function formatDateTime(iso: string): string {
     <template v-else-if="summary">
       <p class="meta-line muted">
         Данные на {{ formatDateTime(summary.lastCalculatedAt) }} · валюта
-        {{ summary.financials.currency }}
+        {{ currencyLabel }}
       </p>
 
       <div class="analytics-grid">
@@ -227,12 +242,9 @@ function formatDateTime(iso: string): string {
               class="stat"
             >
               <dt>{{ stat.label }}</dt>
-              <dd>{{ formatMoney(stat.value) }}</dd>
+              <dd>{{ formatMoney(stat.value, analyticsCurrency) }}</dd>
             </div>
           </div>
-          <p class="muted financial-note">
-            Балансы приходят в копейках выбранной валюты
-          </p>
         </div>
 
         <div class="panel summary-card wide">
@@ -298,6 +310,13 @@ function formatDateTime(iso: string): string {
 </template>
 
 <style scoped>
+
+.main-label {
+    color: var(--accent);
+    font-size: 5em;
+    margin-bottom: 0;
+    margin-top: 0
+}
 .meta-line {
   margin: -12px 0 0;
 }
@@ -483,10 +502,6 @@ function formatDateTime(iso: string): string {
   font-family: var(--mono);
   font-size: 20px;
   line-height: 1.2;
-}
-
-.financial-note {
-  font-size: 12px;
 }
 
 /* Причины риска: горизонтальные бары. */
