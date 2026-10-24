@@ -72,18 +72,30 @@ const loyaltyScoreText = computed(() => {
   return score === null || score === undefined ? '—' : String(score)
 })
 
-const FACTOR_LABELS: Record<string, string> = {
-  serviceId: 'Сервис',
-  reason: 'Причина',
-  weight: 'Влияние',
-  description: 'Описание',
+const FACTOR_TITLE_KEYS = ['title', 'reason'] as const
+const FACTOR_TEXT_KEYS = ['description', 'text', 'detail'] as const
+
+function firstString(
+  factor: Record<string, unknown>,
+  keys: readonly string[],
+): string | undefined {
+  for (const key of keys) {
+    const value = factor[key]
+    if (typeof value === 'string' && value.trim() !== '') {
+      return value.trim()
+    }
+  }
+
+  return undefined
 }
 
 interface FactorView {
   title: string
-  entries: Array<{ label: string; value: string }>
+  description: string
 }
 
+// Из фактора берём ровно два поля — заголовок и текст. Веса, коды и прочие
+// служебные ключи не рендерим, сервис по serviceId подтягивается из карточки.
 const factorViews = computed<FactorView[]>(() => {
   const detailData = detail.value
 
@@ -98,31 +110,15 @@ const factorViews = computed<FactorView[]>(() => {
     const serviceName =
       typeof serviceId === 'number' ? servicesById.get(serviceId) : undefined
 
-    const entries = Object.entries(factor)
-      .filter(
-        (entry): entry is [string, string | number | boolean] =>
-          typeof entry[1] === 'string' ||
-          typeof entry[1] === 'number' ||
-          typeof entry[1] === 'boolean',
-      )
-      .map(([key, value]) => ({
-        label: FACTOR_LABELS[key] ?? key,
-        value:
-          typeof value === 'boolean'
-            ? value
-              ? 'да'
-              : 'нет'
-            : String(value),
-      }))
+    const title =
+      firstString(factor, FACTOR_TITLE_KEYS) ??
+      (typeof serviceId === 'number'
+        ? `Сервис #${serviceId}${serviceName ? ` — ${serviceName}` : ''}`
+        : 'Фактор риска')
 
     return {
-      title:
-        typeof serviceId === 'number'
-          ? `Сервис #${serviceId}${serviceName ? ` — ${serviceName}` : ''}`
-          : (factor['reason'] !== undefined && typeof factor['reason'] === 'string'
-              ? factor['reason']
-              : 'Фактор риска'),
-      entries,
+      title,
+      description: firstString(factor, FACTOR_TEXT_KEYS) ?? '',
     }
   })
 })
@@ -168,7 +164,10 @@ const PAYMENT_TERM_LABELS: Record<string, string> = {
   hour: 'Час',
   day: 'День',
   week: 'Неделя',
+  two_weeks: 'Две недели',
   month: 'Месяц',
+  three_months: 'Три месяца',
+  quarter_year: 'Квартал',
   half_year: 'Полгода',
   year: 'Год',
 }
@@ -318,12 +317,8 @@ function formatDateTime(iso: string): string {
                 class="factor-chip"
               >
                 <p class="factor-title">{{ factor.title }}</p>
-                <p
-                  v-for="entry in factor.entries"
-                  :key="entry.label"
-                  class="factor-entry"
-                >
-                  {{ entry.label }}: <strong>{{ entry.value }}</strong>
+                <p v-if="factor.description" class="factor-text">
+                  {{ factor.description }}
                 </p>
               </div>
             </div>
@@ -660,7 +655,8 @@ function formatDateTime(iso: string): string {
   margin: 4px 0 0;
   color: var(--text-h);
   font-family: var(--mono);
-  font-size: 15px;
+  font-size: 22px;
+  line-height: 1.2;
 }
 
 /* Факторы риска: жёлто-оранжевая обводка из глобальных --danger-* переменных. */
@@ -680,13 +676,14 @@ function formatDateTime(iso: string): string {
 .factor-title {
   margin: 0;
   color: var(--danger);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 
-.factor-entry {
-  margin: 2px 0 0;
+.factor-text {
+  margin: 4px 0 0;
   font-size: 13px;
+  line-height: 1.45;
   color: var(--text);
 }
 
