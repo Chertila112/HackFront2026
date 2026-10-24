@@ -27,7 +27,7 @@ async function logout() {
 
       <nav class="app-nav" aria-label="Основная навигация">
         <RouterLink to="/" active-class="is-active">Главная</RouterLink>
-        <RouterLink to="/profile" active-class="is-active">Профиль</RouterLink>
+        <RouterLink to="/analytics" active-class="is-active">Аналитика</RouterLink>
       </nav>
 
       <div class="app-user">

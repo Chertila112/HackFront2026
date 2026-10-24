@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { useInfiniteQuery } from '@tanstack/vue-query'
-import { computed } from 'vue'
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/vue-query'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { fetchCustomers } from '../api/customers'
-import type { Customer } from '../types/customers'
+import type {
+  Customer,
+  CustomerSortField,
+  SortDirection,
+} from '../types/customers'
 
-const PAGE_SIZE = 4
+const PAGE_SIZE = 10
 
 const STATUS_LABELS: Record<Customer['status'], string> = {
   active: 'Активен',
@@ -15,16 +19,66 @@ const STATUS_LABELS: Record<Customer['status'], string> = {
   insufficient_data: 'Мало данных',
 }
 
+interface TableColumn {
+  label: string
+  sortField?: CustomerSortField
+  numeric?: boolean
+}
+
+const TABLE_COLUMNS: TableColumn[] = [
+  { label: 'ID', sortField: 'id', numeric: true },
+  { label: 'Email/Username', sortField: 'email' },
+  { label: 'Баланс', sortField: 'balance', numeric: true },
+  { label: 'К выводу', numeric: true },
+  { label: 'Бонус', numeric: true },
+  { label: 'Пополнено', sortField: 'totalReplenished', numeric: true },
+  { label: 'Оценка риска', sortField: 'riskScore', numeric: true },
+  { label: 'Статус' },
+  { label: 'Доход под риском', numeric: true },
+  { label: 'Причины' },
+]
+
+const SEARCH_DEBOUNCE_MS = 400
+
+const searchInput = ref('')
+const search = ref('')
+let searchTimer: number | undefined
+
+watch(searchInput, (value) => {
+  window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => {
+    search.value = value.trim()
+  }, SEARCH_DEBOUNCE_MS)
+})
+
+onUnmounted(() => window.clearTimeout(searchTimer))
+
+const sortField = ref<CustomerSortField>('id')
+const sortDirection = ref<SortDirection>('desc')
+
+function toggleSort(field: CustomerSortField): void {
+  if (sortField.value === field) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+    return
+  }
+
+  sortField.value = field
+  sortDirection.value = 'asc'
+}
+
 const query = useInfiniteQuery({
-  queryKey: ['customers'],
+  queryKey: ['customers', sortField, sortDirection, search],
   queryFn: ({ pageParam }) =>
     fetchCustomers({
-      cursorOn: "id",
+      cursorOn: sortField.value,
+      sortDirection: sortDirection.value,
       cursorNext: pageParam ?? undefined,
+      search: search.value || undefined,
       takeAmount: PAGE_SIZE,
     }),
   initialPageParam: null as string | null,
   getNextPageParam: (lastPage) => lastPage.nextCursor,
+  placeholderData: keepPreviousData,
 })
 
 const rows = computed<Customer[]>(() =>
@@ -62,20 +116,66 @@ function retry(): void {
     </div>
 
     <div class="panel table-panel">
+      <div class="table-toolbar">
+        <label class="search-field">
+          <span>Поиск</span>
+          <input
+            v-model="searchInput"
+            type="search"
+            name="search"
+            placeholder="Email или ID клиента…"
+          />
+        </label>
+      </div>
+
       <div class="table-scroll">
         <table class="table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Email</th>
-              <th class="num">Баланс</th>
-              <th class="num">К выводу</th>
-              <th class="num">Бонус</th>
-              <th class="num">Пополнено</th>
-              <th class="num">Оценка риска</th>
-              <th>Статус</th>
-              <th class="num">Доход под риском</th>
-              <th>Причины</th>
+              <th
+                v-for="column in TABLE_COLUMNS"
+                :key="column.label"
+                :class="{
+                  num: column.numeric,
+                  sortable: column.sortField !== undefined,
+                  'is-sorted':
+                    column.sortField !== undefined &&
+                    sortField === column.sortField,
+                }"
+                :aria-sort="
+                  column.sortField === undefined
+                    ? undefined
+                    : sortField === column.sortField
+                      ? sortDirection === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : 'none'
+                "
+                @click="
+                  column.sortField !== undefined &&
+                    toggleSort(column.sortField)
+                "
+              >
+                {{ column.label }}
+                <span
+                  v-if="column.sortField !== undefined"
+                  class="sort-arrow"
+                  :class="{
+                    'is-active':
+                      column.sortField !== undefined &&
+                      sortField === column.sortField,
+                  }"
+                >
+                  {{
+                    column.sortField !== undefined &&
+                      sortField === column.sortField
+                      ? sortDirection === 'asc'
+                        ? '↑'
+                        : '↓'
+                      : '↕'
+                  }}
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -124,6 +224,10 @@ function retry(): void {
             Повторить
           </button>
         </div>
+
+        <p v-else-if="rows.length === 0" class="table-empty muted">
+          Ничего не найдено
+        </p>
       </div>
 
       <div class="table-footer">
@@ -148,6 +252,39 @@ function retry(): void {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Панель поиска над таблицей. */
+.table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(320px, 100%);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.search-field input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-h);
+  font: inherit;
+  font-weight: 400;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
 /* Горизонтальный скролл на узких экранах. */
@@ -181,6 +318,34 @@ function retry(): void {
 
 .table tbody tr:first-child td {
   border-top: 0;
+}
+
+/* Сортируемые заголовки. */
+.table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.table th.sortable:hover {
+  color: var(--text-h);
+}
+
+.table th.is-sorted {
+  color: var(--text-h);
+}
+
+/* Стрелка сортировки: всегда на месте, чтобы буквы не скакали. */
+.sort-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  opacity: 0.45;
+}
+
+.sort-arrow.is-active {
+  color: var(--accent);
+  opacity: 1;
 }
 
 /* Правое выравнивание и для th, и для td: специфичность выше, чем у .table th */

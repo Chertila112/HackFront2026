@@ -1,10 +1,10 @@
 import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '../stores/auth'
+import AnalyticsView from '../views/AnalyticsView.vue'
 import AppLayout from '../layouts/AppLayout.vue'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
-import ProfileView from '../views/ProfileView.vue'
 import RegisterView from '../views/RegisterView.vue'
 
 const routes: RouteRecordRaw[] = [
@@ -30,9 +30,9 @@ const routes: RouteRecordRaw[] = [
         component: HomeView,
       },
       {
-        path: 'profile',
-        name: 'profile',
-        component: ProfileView,
+        path: 'analytics',
+        name: 'analytics',
+        component: AnalyticsView,
       },
     ],
   },
