@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useMutation } from '@tanstack/vue-query'
-import { reactive, ref, computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { register } from '../api/auth'
+import AuthSplit from '../components/AuthSplit.vue'
 import { loginCredentialsSchema } from '../schemas/auth'
 import { useAuth } from '../stores/auth'
 
@@ -13,7 +14,7 @@ const { setSession } = useAuth()
 const form = reactive({
   username: '',
   password: '',
-  repeatPassword: ''
+  repeatPassword: '',
 })
 
 const passwordsMismatch = computed(
@@ -63,19 +64,15 @@ function submit() {
 
   validationError.value = null
   mutation.mutate(parsed.data)
-
 }
 </script>
 
 <template>
-  <main class="login-page">
-    <form class="login-card" novalidate @submit.prevent="submit">
-      <div>
-        <p class="eyebrow">Вход</p>
-        <h1>Регистрация</h1>
-        <p class="muted">Введите данные учётной записи, чтобы продолжить.</p>
-      </div>
-
+  <AuthSplit
+    title="Регистрация"
+    subtitle="Создайте учётную запись, чтобы получить доступ к аналитике."
+  >
+    <form class="auth-card" novalidate @submit.prevent="submit">
       <label class="field">
         <span>Имя аккаунта</span>
         <input
@@ -95,7 +92,7 @@ function submit() {
           v-model="form.password"
           type="password"
           name="password"
-          autocomplete="current-password"
+          autocomplete="new-password"
           placeholder="Введите пароль"
           required
           @input="clearErrors"
@@ -108,15 +105,17 @@ function submit() {
           v-model="form.repeatPassword"
           type="password"
           name="repeatPassword"
-          autocomplete="current-password"
+          autocomplete="new-password"
           placeholder="Подтвердите пароль"
           required
           @input="clearErrors"
         />
       </label>
+
       <small v-if="passwordsMismatch" class="field-error">
         Пароли не совпадают
       </small>
+
       <p
         v-if="validationError || mutation.error.value"
         class="form-error"
@@ -125,35 +124,31 @@ function submit() {
         {{ validationError || mutation.error.value?.message }}
       </p>
 
-      <button class="button login-submit" type="submit" :disabled="mutation.isPending.value">
-        {{ mutation.isPending.value ? 'Входим…' : 'Зарегистрироваться' }}
+      <button
+        class="button auth-submit"
+        type="submit"
+        :disabled="mutation.isPending.value"
+      >
+        {{ mutation.isPending.value ? 'Создаём аккаунт…' : 'Зарегистрироваться' }}
       </button>
 
-      <p class="demo-hint">
-        Демо-аккаунты:<br />
-        <code class="code">demo / demo1234</code><br />
-        <code class="code">user / user1234</code>
+      <p class="switch-link">
+        <span>Уже есть аккаунт?</span>
+        <RouterLink class="switch-link-button" :to="{ path: '/login' }">
+          Войти
+        </RouterLink>
       </p>
     </form>
-  </main>
+  </AuthSplit>
 </template>
 
 <style scoped>
-/* Центрируем форму на весь экран. */
-.login-page {
-  display: grid;
-  place-items: center;
-  min-height: 100svh;
-  padding: 24px;
-  background: var(--bg);
-}
-
-/* Карточка формы. Меняйте ширину, отступы и тень здесь. */
-.login-card {
+/* Карточка формы в правой колонке. */
+.auth-card {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: min(100%, 380px);
+  width: 100%;
   padding: 32px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -161,24 +156,31 @@ function submit() {
   box-shadow: var(--shadow);
 }
 
-/* Заголовок внутри карточки. */
-.login-card h1 {
-  margin: 0 0 6px;
-  font-size: 30px;
-  letter-spacing: -0.03em;
+.field-error {
+  margin: -6px 0 0;
+  color: var(--danger);
+  font-size: 13px;
 }
 
-/* Кнопка входа растягивается на всю ширину карточки. */
-.login-submit {
+.auth-submit {
   width: 100%;
 }
 
-/* Подсказка с демо-учётками. */
-.demo-hint {
+.switch-link {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
   margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.8;
-  text-align: center;
+  font-size: 14px;
+}
+
+.switch-link-button {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.switch-link-button:hover {
+  text-decoration: underline;
 }
 </style>

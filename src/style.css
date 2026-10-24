@@ -18,45 +18,23 @@
   --code-bg: #f0f0f0;
 
   /* Акцент: кнопки, ссылки, активная навигация */
-  --accent: #4cc6f1;
-  --accent-contrast: #4cc6f1;
+  --accent: #101828;
+  --accent-contrast: #ffffff;
   --accent-bg: rgba(0, 0, 0, 0.07);
   --accent-border: rgba(0, 0, 0, 0.35);
 
   /* Ошибки и предупреждения */
-  --danger: #E97C35;
-  --danger-bg: #E97C35;
-  --danger-border: #c4c4c4;
+  --danger: #9a4a12;
+  --danger-bg: rgba(233, 124, 53, 0.14);
+  --danger-border: rgba(233, 124, 53, 0.45);
 
-  /* Объём кнопок */
-  --button-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.32),
-    0 1px 2px rgba(0, 0, 0, 0.18),
-    0 5px 12px rgba(0, 0, 0, 0.12);
-  --button-shadow-hover:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.34),
-    0 2px 4px rgba(0, 0, 0, 0.2),
-    0 8px 18px rgba(0, 0, 0, 0.16);
-  --button-shadow-active:
-    inset 0 2px 4px rgba(0, 0, 0, 0.4),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    0 1px 2px rgba(0, 0, 0, 0.15);
-  --button-ghost-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.08),
-    0 4px 10px rgba(0, 0, 0, 0.05);
-  --button-ghost-shadow-hover:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
-    0 2px 4px rgba(0, 0, 0, 0.1),
-    0 6px 14px rgba(0, 0, 0, 0.07);
-  --button-ghost-shadow-active:
-    inset 0 2px 3px rgba(0, 0, 0, 0.08),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.6),
-    0 1px 2px rgba(0, 0, 0, 0.06);
+  /* Объём кнопок: плоские тени, без inner shadow */
+  --button-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
+  --button-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.24);
+  --button-shadow-active: 0 1px 2px rgba(15, 23, 42, 0.26);
+  --button-ghost-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+  --button-ghost-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.14);
+  --button-ghost-shadow-active: 0 1px 2px rgba(15, 23, 42, 0.14);
 
   /* Тени и скругления */
   --shadow:
@@ -93,43 +71,21 @@
     --border: #2d2d2d;
     --code-bg: #202020;
 
-    --accent: #f2f2f2;
-    --accent-contrast: #111111;
+    --accent: #4cc6f1;
+    --accent-contrast: #06222e;
     --accent-bg: rgba(255, 255, 255, 0.08);
     --accent-border: rgba(255, 255, 255, 0.4);
 
-    --danger: #f2f2f2;
-    --danger-bg: rgba(255, 255, 255, 0.06);
-    --danger-border: rgba(255, 255, 255, 0.28);
+    --danger: #f0925a;
+    --danger-bg: rgba(233, 124, 53, 0.16);
+    --danger-border: rgba(233, 124, 53, 0.5);
 
-    --button-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.85),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.22),
-      0 1px 2px rgba(0, 0, 0, 0.55),
-      0 5px 12px rgba(0, 0, 0, 0.35);
-    --button-shadow-hover:
-      inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.24),
-      0 2px 4px rgba(0, 0, 0, 0.6),
-      0 8px 18px rgba(0, 0, 0, 0.4);
-    --button-shadow-active:
-      inset 0 2px 4px rgba(0, 0, 0, 0.3),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.3),
-      0 1px 2px rgba(0, 0, 0, 0.45);
-    --button-ghost-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
-      0 1px 2px rgba(0, 0, 0, 0.35),
-      0 4px 10px rgba(0, 0, 0, 0.2);
-    --button-ghost-shadow-hover:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-      0 2px 4px rgba(0, 0, 0, 0.4),
-      0 6px 14px rgba(0, 0, 0, 0.25);
-    --button-ghost-shadow-active:
-      inset 0 2px 4px rgba(0, 0, 0, 0.45),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-      0 1px 2px rgba(0, 0, 0, 0.3);
+    --button-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    --button-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --button-shadow-active: 0 1px 2px rgba(0, 0, 0, 0.65);
+    --button-ghost-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --button-ghost-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --button-ghost-shadow-active: 0 1px 2px rgba(0, 0, 0, 0.5);
 
     --shadow:
       rgba(0, 0, 0, 0.45) 0 18px 40px -16px,

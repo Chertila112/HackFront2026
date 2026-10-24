@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/vue-query'
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { login } from '../api/auth'
+import AuthSplit from '../components/AuthSplit.vue'
 import { loginCredentialsSchema } from '../schemas/auth'
 import { useAuth } from '../stores/auth'
 
@@ -22,9 +23,9 @@ const redirectQuery =
     ? route.query.redirect
     : null
 
-const registerTo = redirectQuery ? {
-  path: '/register', query: {redirect: redirectQuery}
-  } : {path: '/register'}
+const registerTo = redirectQuery
+  ? { path: '/register', query: { redirect: redirectQuery } }
+  : { path: '/register' }
 
 const validationError = ref<string | null>(null)
 
@@ -66,14 +67,11 @@ function submit() {
 </script>
 
 <template>
-  <main class="login-page">
-    <form class="login-card" novalidate @submit.prevent="submit">
-      <div>
-        <p class="eyebrow">Вход</p>
-        <h1>Авторизация</h1>
-        <p class="muted">Введите данные учётной записи, чтобы продолжить.</p>
-      </div>
-
+  <AuthSplit
+    title="Вход"
+    subtitle="Введите данные учётной записи, чтобы продолжить."
+  >
+    <form class="auth-card" novalidate @submit.prevent="submit">
       <label class="field">
         <span>Имя аккаунта</span>
         <input
@@ -108,34 +106,31 @@ function submit() {
         {{ validationError || mutation.error.value?.message }}
       </p>
 
-      <button class="button login-submit" type="submit" :disabled="mutation.isPending.value">
+      <button
+        class="button auth-submit"
+        type="submit"
+        :disabled="mutation.isPending.value"
+      >
         {{ mutation.isPending.value ? 'Входим…' : 'Войти' }}
       </button>
 
-      <div class='register-link'>
-          <span>Нет аккаунта? </span>
-          <RouterLink :to="registerTo" class="reg-button">Зарегистрироваться.</RouterLink>
-      </div>
+      <p class="switch-link">
+        <span>Нет аккаунта?</span>
+        <RouterLink :to="registerTo" class="switch-link-button">
+          Зарегистрироваться
+        </RouterLink>
+      </p>
     </form>
-  </main>
+  </AuthSplit>
 </template>
 
 <style scoped>
-/* Центрируем форму на весь экран. */
-.login-page {
-  display: grid;
-  place-items: center;
-  min-height: 100svh;
-  padding: 24px;
-  background: var(--bg);
-}
-
-/* Карточка формы. Меняйте ширину, отступы и тень здесь. */
-.login-card {
+/* Карточка формы в правой колонке. */
+.auth-card {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: min(100%, 380px);
+  width: 100%;
   padding: 32px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -143,42 +138,25 @@ function submit() {
   box-shadow: var(--shadow);
 }
 
-/* Заголовок внутри карточки. */
-.login-card h1 {
-  margin: 0 0 6px;
-  font-size: 30px;
-  letter-spacing: -0.03em;
-}
-
-/* Кнопка входа растягивается на всю ширину карточки. */
-.login-submit {
+.auth-submit {
   width: 100%;
 }
 
-/* Подсказка с демо-учётками. */
-.demo-hint {
+.switch-link {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
   margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.8;
-  text-align: center;
+  font-size: 14px;
 }
 
-.register-link {
-    display: flex;
-    flex-direction: row;
+.switch-link-button {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
 }
 
-.reg-button {
-    background-color: rgba(0, 0, 0, 0);
-    border: none;
-    color: blue;
-}
-
-.reg-button:hover {
-    background-color: rgba(0, 0, 0, 0);
-    border: none;
-    color: lightblue;
-    text-decoration: underline;
+.switch-link-button:hover {
+  text-decoration: underline;
 }
 </style>

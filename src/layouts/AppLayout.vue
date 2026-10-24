@@ -12,6 +12,7 @@ async function logout() {
   try {
     await logoutRequest()
   } finally {
+    await queryClient.cancelQueries()
     queryClient.clear()
     clearSession()
     router.replace({ name: 'login' })
@@ -118,13 +119,11 @@ async function logout() {
   white-space: nowrap;
 }
 
-/* Контент страницы с ограничением ширины. */
+/* Контент страницы на всю ширину с небольшим отступом. */
 .app-main {
   flex: 1;
   width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: clamp(24px, 4vw, 48px) clamp(18px, 4vw, 40px);
+  padding: clamp(16px, 2.5vw, 28px) clamp(12px, 2vw, 24px);
 }
 
 /* На мобильных прячем имя и переносим навигацию на новую строку. */
