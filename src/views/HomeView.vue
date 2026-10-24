@@ -2,6 +2,7 @@
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/vue-query'
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { fetchCustomers } from '../api/customers'
+import ModelSettingsModal from '../components/ModelSettingsModal.vue'
 import type {
   Customer,
   CustomerSortField,
@@ -9,6 +10,7 @@ import type {
 } from '../types/customers'
 
 const PAGE_SIZE = 10
+const FILTERS_DEBOUNCE_MS = 400
 
 const STATUS_LABELS: Record<Customer['status'], string> = {
   active: 'Активен',
@@ -38,8 +40,6 @@ const TABLE_COLUMNS: TableColumn[] = [
   { label: 'Причины' },
 ]
 
-const SEARCH_DEBOUNCE_MS = 400
-
 const searchInput = ref('')
 const search = ref('')
 let searchTimer: number | undefined
@@ -48,10 +48,39 @@ watch(searchInput, (value) => {
   window.clearTimeout(searchTimer)
   searchTimer = window.setTimeout(() => {
     search.value = value.trim()
-  }, SEARCH_DEBOUNCE_MS)
+  }, FILTERS_DEBOUNCE_MS)
 })
 
-onUnmounted(() => window.clearTimeout(searchTimer))
+function parseRiskScore(value: string | number): number | undefined {
+  const raw = typeof value === 'number' ? String(value) : value.trim()
+
+  if (raw === '') return undefined
+
+  const parsed = Number(raw)
+
+  if (!Number.isFinite(parsed)) return undefined
+
+  return Math.min(100, Math.max(0, Math.round(parsed)))
+}
+
+const riskMinInput = ref<string | number>('')
+const riskMaxInput = ref<string | number>('')
+const riskMin = ref<number | undefined>(undefined)
+const riskMax = ref<number | undefined>(undefined)
+let riskTimer: number | undefined
+
+watch([riskMinInput, riskMaxInput], () => {
+  window.clearTimeout(riskTimer)
+  riskTimer = window.setTimeout(() => {
+    riskMin.value = parseRiskScore(riskMinInput.value)
+    riskMax.value = parseRiskScore(riskMaxInput.value)
+  }, FILTERS_DEBOUNCE_MS)
+})
+
+onUnmounted(() => {
+  window.clearTimeout(searchTimer)
+  window.clearTimeout(riskTimer)
+})
 
 const sortField = ref<CustomerSortField>('id')
 const sortDirection = ref<SortDirection>('desc')
@@ -66,14 +95,25 @@ function toggleSort(field: CustomerSortField): void {
   sortDirection.value = 'asc'
 }
 
+const isSettingsOpen = ref(false)
+
 const query = useInfiniteQuery({
-  queryKey: ['customers', sortField, sortDirection, search],
+  queryKey: [
+    'customers',
+    sortField,
+    sortDirection,
+    search,
+    riskMin,
+    riskMax,
+  ],
   queryFn: ({ pageParam }) =>
     fetchCustomers({
       cursorOn: sortField.value,
       sortDirection: sortDirection.value,
       cursorNext: pageParam ?? undefined,
       search: search.value || undefined,
+      riskScoreMin: riskMin.value,
+      riskScoreMax: riskMax.value,
       takeAmount: PAGE_SIZE,
     }),
   initialPageParam: null as string | null,
@@ -108,16 +148,12 @@ function retry(): void {
 <template>
   <section class="page">
     <div class="page-head">
-      <p class="eyebrow">Аналитика</p>
       <h1>Клиенты и оценка риска</h1>
-      <p class="lead">
-        Список клиентов с балансами, бонусами и оценкой риска оттока.
-      </p>
     </div>
 
-    <div class="panel table-panel">
+    <div class="table-block">
       <div class="table-toolbar">
-        <label class="search-field">
+        <label class="toolbar-field search-field">
           <span>Поиск</span>
           <input
             v-model="searchInput"
@@ -126,151 +162,191 @@ function retry(): void {
             placeholder="Email или ID клиента…"
           />
         </label>
+
+        <label class="toolbar-field">
+          <span>Риск от</span>
+          <input
+            v-model="riskMinInput"
+            type="number"
+            name="riskScoreMin"
+            min="0"
+            max="100"
+            placeholder="0"
+          />
+        </label>
+
+        <label class="toolbar-field">
+          <span>Риск до</span>
+          <input
+            v-model="riskMaxInput"
+            type="number"
+            name="riskScoreMax"
+            min="0"
+            max="100"
+            placeholder="100"
+          />
+        </label>
+
+        <button
+          class="button button--ghost"
+          type="button"
+          @click="isSettingsOpen = true"
+        >
+          Настройки модели
+        </button>
       </div>
 
-      <div class="table-scroll">
-        <table class="table">
-          <thead>
-            <tr>
-              <th
-                v-for="column in TABLE_COLUMNS"
-                :key="column.label"
-                :class="{
-                  num: column.numeric,
-                  sortable: column.sortField !== undefined,
-                  'is-sorted':
-                    column.sortField !== undefined &&
-                    sortField === column.sortField,
-                }"
-                :aria-sort="
-                  column.sortField === undefined
-                    ? undefined
-                    : sortField === column.sortField
-                      ? sortDirection === 'asc'
-                        ? 'ascending'
-                        : 'descending'
-                      : 'none'
-                "
-                @click="
-                  column.sortField !== undefined &&
-                    toggleSort(column.sortField)
-                "
-              >
-                {{ column.label }}
-                <span
-                  v-if="column.sortField !== undefined"
-                  class="sort-arrow"
+      <div class="panel table-panel">
+        <div class="table-scroll">
+          <table class="table">
+            <thead>
+              <tr>
+                <th
+                  v-for="column in TABLE_COLUMNS"
+                  :key="column.label"
                   :class="{
-                    'is-active':
+                    num: column.numeric,
+                    sortable: column.sortField !== undefined,
+                    'is-sorted':
                       column.sortField !== undefined &&
                       sortField === column.sortField,
                   }"
-                >
-                  {{
+                  :aria-sort="
+                    column.sortField === undefined
+                      ? undefined
+                      : sortField === column.sortField
+                        ? sortDirection === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                  "
+                  @click="
                     column.sortField !== undefined &&
-                      sortField === column.sortField
-                      ? sortDirection === 'asc'
-                        ? '↑'
-                        : '↓'
-                      : '↕'
-                  }}
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="customer in rows" :key="customer.id">
-              <td class="id-cell">{{ customer.id }}</td>
-              <td class="email">{{ customer.email }}</td>
-              <td class="num">{{ formatMoney(customer.balance) }}</td>
-              <td class="num">{{ formatMoney(customer.withdrawBalance) }}</td>
-              <td class="num">
-                <span class="bonus-cell">
-                  {{ formatMoney(customer.bonusBalance) }}
+                      toggleSort(column.sortField)
+                  "
+                >
+                  {{ column.label }}
                   <span
-                    class="badge mini-badge"
-                    :class="`bonus--${customer.bonusState}`"
+                    v-if="column.sortField !== undefined"
+                    class="sort-arrow"
+                    :class="{
+                      'is-active':
+                        column.sortField !== undefined &&
+                        sortField === column.sortField,
+                    }"
                   >
-                    {{ customer.bonusState }}
+                    {{
+                      column.sortField !== undefined &&
+                        sortField === column.sortField
+                        ? sortDirection === 'asc'
+                          ? '↑'
+                          : '↓'
+                        : '↕'
+                    }}
                   </span>
-                </span>
-              </td>
-              <td class="num">{{ formatMoney(customer.totalReplenished) }}</td>
-              <td class="num">
-                {{ customer.riskScore === null ? '—' : customer.riskScore }}
-              </td>
-              <td>
-                <span class="badge status-badge" :class="`status--${customer.status}`">
-                  {{ STATUS_LABELS[customer.status] }}
-                </span>
-              </td>
-              <td class="num">{{ formatMoney(customer.revenueAtRisk) }}</td>
-              <td class="reasons">
-                {{ customer.primaryReasons.join('; ') }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="customer in rows" :key="customer.id">
+                <td class="id-cell">{{ customer.id }}</td>
+                <td class="email">{{ customer.email }}</td>
+                <td class="num">{{ formatMoney(customer.balance) }}</td>
+                <td class="num">{{ formatMoney(customer.withdrawBalance) }}</td>
+                <td class="num">
+                  <span class="bonus-cell">
+                    {{ formatMoney(customer.bonusBalance) }}
+                    <span
+                      class="badge mini-badge"
+                      :class="`bonus--${customer.bonusState}`"
+                    >
+                      {{ customer.bonusState }}
+                    </span>
+                  </span>
+                </td>
+                <td class="num">{{ formatMoney(customer.totalReplenished) }}</td>
+                <td class="num">
+                  {{ customer.riskScore === null ? '—' : customer.riskScore }}
+                </td>
+                <td>
+                  <span
+                    class="badge status-badge"
+                    :class="`status--${customer.status}`"
+                  >
+                    {{ STATUS_LABELS[customer.status] }}
+                  </span>
+                </td>
+                <td class="num">{{ formatMoney(customer.revenueAtRisk) }}</td>
+                <td class="reasons">
+                  {{ customer.primaryReasons.join('; ') }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-        <p v-if="isInitialLoading" class="table-empty muted">
-          Загружаем клиентов…
-        </p>
-
-        <div v-else-if="query.isError.value" class="table-empty table-error">
-          <p class="form-error" role="alert">
-            {{ errorMessage ?? 'Не удалось загрузить клиентов' }}
+          <p v-if="isInitialLoading" class="table-empty muted">
+            Загружаем клиентов…
           </p>
-          <button class="button button--ghost" type="button" @click="retry">
-            Повторить
-          </button>
+
+          <div v-else-if="query.isError.value" class="table-empty table-error">
+            <p class="form-error" role="alert">
+              {{ errorMessage ?? 'Не удалось загрузить клиентов' }}
+            </p>
+            <button class="button button--ghost" type="button" @click="retry">
+              Повторить
+            </button>
+          </div>
+
+          <p v-else-if="rows.length === 0" class="table-empty muted">
+            Ничего не найдено
+          </p>
         </div>
 
-        <p v-else-if="rows.length === 0" class="table-empty muted">
-          Ничего не найдено
-        </p>
-      </div>
-
-      <div class="table-footer">
-        <p class="muted">Показано: {{ rows.length }}</p>
-        <button
-          v-if="query.hasNextPage.value"
-          class="button"
-          type="button"
-          :disabled="query.isFetchingNextPage.value"
-          @click="query.fetchNextPage()"
-        >
-          {{ query.isFetchingNextPage.value ? 'Загружаем…' : 'Загрузить ещё' }}
-        </button>
+        <div class="table-footer">
+          <p class="muted">Показано: {{ rows.length }}</p>
+          <button
+            v-if="query.hasNextPage.value"
+            class="button"
+            type="button"
+            :disabled="query.isFetchingNextPage.value"
+            @click="query.fetchNextPage()"
+          >
+            {{ query.isFetchingNextPage.value ? 'Загружаем…' : 'Загрузить ещё' }}
+          </button>
+        </div>
       </div>
     </div>
+
+    <ModelSettingsModal :open="isSettingsOpen" @close="isSettingsOpen = false" />
   </section>
 </template>
 
 <style scoped>
-/* Карточка таблицы. */
-.table-panel {
+/* Тулбар над таблицей: поиск и фильтры риска слева. */
+.table-block {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* Панель поиска над таблицей. */
 .table-toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.search-field {
+.toolbar-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: min(320px, 100%);
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
 }
 
-.search-field input {
+.toolbar-field input {
+  width: 110px;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -282,9 +358,24 @@ function retry(): void {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.search-field input:focus {
+.toolbar-field input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.search-field {
+  width: min(280px, 100%);
+}
+
+.search-field input {
+  width: 100%;
+}
+
+/* Карточка таблицы. */
+.table-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* Горизонтальный скролл на узких экранах. */

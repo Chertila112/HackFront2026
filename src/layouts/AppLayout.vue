@@ -26,8 +26,8 @@ async function logout() {
       <RouterLink class="brand" to="/">HackFront</RouterLink>
 
       <nav class="app-nav" aria-label="Основная навигация">
-        <RouterLink to="/" active-class="is-active">Главная</RouterLink>
-        <RouterLink to="/analytics" active-class="is-active">Аналитика</RouterLink>
+        <RouterLink to="/" exact-active-class="is-active">Главная</RouterLink>
+        <RouterLink to="/analytics" exact-active-class="is-active">Аналитика</RouterLink>
       </nav>
 
       <div class="app-user">

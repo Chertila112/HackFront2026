@@ -22,7 +22,7 @@ paths:
       summary: Вход по логину и паролю
       description: Принимает username и password. При успехе возвращает JWT, expiresAt
         и данные пользователя, ставит refresh-куку hackback_refresh. Неверные
-        данные — 401.
+        данные - 401.
       requestBody:
         content:
           application/json:
@@ -38,12 +38,39 @@ paths:
                 $ref: "#/components/schemas/AuthResponse"
         "401":
           description: Unauthorized
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Регистрация
+      description: Принимает username и password. При успехе возвращает JWT, expiresAt
+        и данные пользователя, ставит refresh-куку hackback_refresh. Неверные
+        данные - 400, при конфликте username - 409
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad Request
+        "409":
+          description: Conflict
+      security:
+        - bearerAuth: []
   /api/v1/auth/me:
     get:
       tags:
         - Auth
       summary: Получение текущего пользователя
-      description: Возвращает профиль пользователя из JWT. 401 — нет или просрочен токен.
+      description: Возвращает профиль пользователя из JWT. 401 - нет или просрочен токен.
       responses:
         "200":
           description: OK
@@ -71,7 +98,7 @@ paths:
       summary: Обновление access-токена
       description: Читает refresh-токен из HttpOnly куки hackback_refresh, отзывает
         его и выдаёт новый (ротация). В ответе новый JWT и новая кука. Нет куки,
-        токен отозван или просрочен — 401.
+        токен отозван или просрочен - 401.
       responses:
         "200":
           description: OK
@@ -89,7 +116,7 @@ paths:
         - Source
       summary: Загрузка / обновление снимка данных
       description: Полностью заменяет текущий датасет клиентов, услуг и транзакций.
-        Битые ссылки ownerId/serviceId — 400.
+        Битые ссылки ownerId/serviceId - 400.
       requestBody:
         content:
           application/json:
@@ -110,20 +137,19 @@ paths:
       tags:
         - Customers
       summary: Список клиентов с оценками риска
-      description: Пагинация, сортировка
-        (id/email/balance/totalReplenished/riskScore), поиск по подстроке
-        id/email и фильтр по riskLevel.
+      description: "Курсорная (keyset) пагинация:
+        cursorOn/cursorNext/takeAmount/sortDirection, поиск по подстроке
+        id/email и фильтр по диапазону riskScore."
       parameters:
-        - name: page
+        - name: cursorOn
           in: query
           schema:
-            pattern: ^-?(?:0|[1-9]\d*)$
-            type:
-              - integer
-              - string
-            format: int32
-            default: 1
-        - name: pageSize
+            type: string
+        - name: cursorNext
+          in: query
+          schema:
+            type: string
+        - name: takeAmount
           in: query
           schema:
             pattern: ^-?(?:0|[1-9]\d*)$
@@ -132,18 +158,26 @@ paths:
               - string
             format: int32
             default: 20
-        - name: sortBy
-          in: query
-          schema:
-            type: string
         - name: sortDirection
           in: query
           schema:
             type: string
-        - name: riskLevel
+        - name: riskScoreMin
           in: query
           schema:
-            type: string
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+        - name: riskScoreMax
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
         - name: search
           in: query
           schema:
@@ -151,6 +185,8 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Bad Request
         "401":
           description: Unauthorized
       security:
@@ -161,7 +197,7 @@ paths:
         - Customers
       summary: Детальная карточка клиента
       description: Балансы с effectiveBalance, замоканная оценка риска, услуги
-        владельца и последние транзакции. 404 — клиент не найден.
+        владельца и последние транзакции. 404 - клиент не найден.
       parameters:
         - name: id
           in: path
@@ -202,7 +238,7 @@ paths:
         - Model
       summary: Изменение настроек модели
       description: Обновляет только переданные веса и пороги. Отрицательные веса или
-        highRiskThreshold <= mediumRiskThreshold — 400. Настройки сохраняются в
+        highRiskThreshold <= mediumRiskThreshold - 400. Настройки сохраняются в
         БД и переживают перезапуск.
       requestBody:
         content:
@@ -224,9 +260,9 @@ paths:
       tags:
         - Analytics
       summary: Сводная аналитика и оценка потерь
-      description: "Агрегированные метрики по клиентам, распределению рисков и
-        деньгам. Скоринг ещё не подключён: всё распределение уходит в
-        insufficientData, финансовые показатели нулевые."
+      description: Агрегированные метрики по клиентам с распределением по полосам
+        риска согласно порогам модели. Финансовые показатели нулевые до
+        подключения скоринга.
       responses:
         "200":
           description: OK
@@ -277,6 +313,13 @@ components:
           format: int64
         bonusState:
           type: string
+        riskScore:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
     AnalyticsSummaryResponse:
       required:
         - totalCustomers
