@@ -142,7 +142,7 @@ function formatDateTime(iso: string): string {
       </p>
     </div>
 
-    <p v-if="summaryQuery.isPending" class="muted">
+    <p v-if="summaryQuery.isPending.value" class="muted">
       Загружаем сводку…
     </p>
 
