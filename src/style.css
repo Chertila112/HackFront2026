@@ -9,23 +9,23 @@
   --text-muted: #8a8a8a;
 
   /* Фоны и поверхности */
-  --bg: #f7f7f7;
-  --surface: #ffffff;
-  --surface-muted: #ededed;
+  --bg: #4cc6f1;
+  --surface: #4cc6f1;
+  --surface-muted: #4bb6a1;
 
   /* Границы и код */
   --border: #dedede;
   --code-bg: #f0f0f0;
 
   /* Акцент: кнопки, ссылки, активная навигация */
-  --accent: #111111;
-  --accent-contrast: #ffffff;
+  --accent: #4cc6f1;
+  --accent-contrast: #4cc6f1;
   --accent-bg: rgba(0, 0, 0, 0.07);
   --accent-border: rgba(0, 0, 0, 0.35);
 
   /* Ошибки и предупреждения */
-  --danger: #222222;
-  --danger-bg: #f4f4f4;
+  --danger: #E97C35;
+  --danger-bg: #E97C35;
   --danger-border: #c4c4c4;
 
   /* Объём кнопок */

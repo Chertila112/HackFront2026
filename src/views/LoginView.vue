@@ -11,9 +11,20 @@ const router = useRouter()
 const { setSession } = useAuth()
 
 const form = reactive({
-  username: 'demo',
-  password: 'demo1234',
+  username: 'admin@hack.local',
+  password: 'admin123',
 })
+
+const redirectQuery =
+  typeof route.query.redirect === 'string' &&
+  route.query.redirect.startsWith('/') &&
+  !route.query.redirect.startsWith('//')
+    ? route.query.redirect
+    : null
+
+const registerTo = redirectQuery ? {
+  path: '/register', query: {redirect: redirectQuery}
+  } : {path: '/register'}
 
 const validationError = ref<string | null>(null)
 
@@ -58,13 +69,13 @@ function submit() {
   <main class="login-page">
     <form class="login-card" novalidate @submit.prevent="submit">
       <div>
-        <p class="eyebrow">Авторизация</p>
-        <h1>Вход</h1>
+        <p class="eyebrow">Вход</p>
+        <h1>Авторизация</h1>
         <p class="muted">Введите данные учётной записи, чтобы продолжить.</p>
       </div>
 
       <label class="field">
-        <span>Username</span>
+        <span>Имя аккаунта</span>
         <input
           v-model="form.username"
           type="text"
@@ -101,11 +112,10 @@ function submit() {
         {{ mutation.isPending.value ? 'Входим…' : 'Войти' }}
       </button>
 
-      <p class="demo-hint">
-        Демо-аккаунты:<br />
-        <code class="code">demo / demo1234</code><br />
-        <code class="code">user / user1234</code>
-      </p>
+      <div class='register-link'>
+          <span>Нет аккаунта? </span>
+          <RouterLink :to="registerTo" class="reg-button">Зарегистрироваться.</RouterLink>
+      </div>
     </form>
   </main>
 </template>
@@ -152,5 +162,23 @@ function submit() {
   font-size: 12px;
   line-height: 1.8;
   text-align: center;
+}
+
+.register-link {
+    display: flex;
+    flex-direction: row;
+}
+
+.reg-button {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: blue;
+}
+
+.reg-button:hover {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: lightblue;
+    text-decoration: underline;
 }
 </style>

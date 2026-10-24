@@ -6,7 +6,7 @@ export const userSchema = z.object({
 })
 
 export const authSessionSchema = z.object({
-  accessToken: z.string().min(1),
+  token: z.string().min(1),
   expiresAt: z.iso.datetime(),
   user: userSchema,
 })

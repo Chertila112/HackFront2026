@@ -5,8 +5,14 @@ import AppLayout from '../layouts/AppLayout.vue'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import ProfileView from '../views/ProfileView.vue'
+import RegisterView from '../views/RegisterView.vue'
 
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/register',
+    name: 'register',
+    component: RegisterView,
+  },
   {
     path: '/login',
     name: 'login',

@@ -19,7 +19,7 @@ const isAuthenticated = computed(() => Boolean(state.accessToken && state.user))
 const displayName = computed(() => state.user?.username ?? '')
 
 function setSession(session: AuthSession): void {
-  state.accessToken = session.accessToken
+  state.accessToken = session.token
   state.user = session.user
 }
 
