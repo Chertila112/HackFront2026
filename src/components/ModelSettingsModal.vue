@@ -17,10 +17,6 @@ interface ModalField<K> {
 
 const WEIGHT_FIELDS: Array<ModalField<keyof ModelWeights>> = [
   {
-    key: 'prolongWaitWithoutFundsWeight',
-    label: 'Ожидание продления без средств',
-  },
-  {
     key: 'autoprolongDisabledExpiringWeight',
     label: 'Автопродление выключено, срок истекает',
   },
@@ -29,12 +25,16 @@ const WEIGHT_FIELDS: Array<ModalField<keyof ModelWeights>> = [
     label: 'Автопродление включено, дефицит баланса',
   },
   {
-    key: 'suspendedServiceWeight',
-    label: 'Приостановленная услуга',
+    key: 'prolongWaitWithoutFundsWeight',
+    label: 'Ожидание продления без средств',
   },
   {
     key: 'recentFailedProlongationWeight',
     label: 'Недавняя неудачная попытка продления',
+  },
+  {
+    key: 'suspendedServiceWeight',
+    label: 'Приостановленная услуга',
   },
 ]
 
@@ -196,6 +196,7 @@ const mutation = useMutation({
               type="number"
               step="any"
               min="0"
+              :placeholder="String(settingsQuery.data.value?.weights[field.key] ?? '')"
             />
           </label>
 
@@ -211,6 +212,7 @@ const mutation = useMutation({
               type="number"
               :step="field.integer ? '1' : 'any'"
               min="0"
+              :placeholder="String(settingsQuery.data.value?.thresholds[field.key] ?? '')"
             />
           </label>
 
