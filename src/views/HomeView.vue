@@ -154,7 +154,7 @@ function retry(): void {
             :disabled="query.isFetchingNextPage.value"
             @click="query.fetchNextPage()"
           >
-            {{ query.isFetchingNextPage.value ? 'Загружаем…' : 'Загрузить ещё' }}
+            {{ query.isFetchingNextPage.value ? 'Загрузка…' : 'Загрузить ещё' }}
           </button>
         </div>
       </div>
@@ -251,9 +251,9 @@ function retry(): void {
 }
 
 .table-footer {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
 }
 </style>

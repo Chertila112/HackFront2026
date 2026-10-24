@@ -52,7 +52,7 @@ export const customersPageSchema = z.object({
   items: z.array(customerSchema),
   nextCursor: z.string().nullable(),
 })
-
+const statusSchema = z.enum(["active", "suspended", "prolong_wait", "deleted", "blocked"])
 // Карточка клиента в v1.yaml не описана — валидируем по фактическому ответу
 // GET /customers/{id}, сервисы и транзакции повторяют Document из openapi.
 export const customerDetailSchema = z.object({
@@ -82,7 +82,7 @@ export const customerDetailSchema = z.object({
       autoProlong: z.boolean(),
       createdAt: z.string(),
       expiresAt: z.string(),
-      status: z.string(),
+      status: statusSchema,
       price: intLikeSchema,
     }),
   ),

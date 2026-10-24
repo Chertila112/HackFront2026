@@ -111,7 +111,7 @@ function submit() {
         type="submit"
         :disabled="mutation.isPending.value"
       >
-        {{ mutation.isPending.value ? 'Входим…' : 'Войти' }}
+        {{ mutation.isPending.value ? 'Вход…' : 'Войти' }}
       </button>
 
       <p class="switch-link">

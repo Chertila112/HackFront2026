@@ -12,7 +12,6 @@ const customerId = computed(() => props.customerId)
 
 const detailQuery = useQuery({
   queryKey: ['customer-detail', customerId],
-  // enabled пуст в queryKey выключает запрос до открытия модалки, где id ещё null.
   enabled: () => props.open && props.customerId !== null,
   queryFn: () => fetchCustomerDetail(customerId.value as number),
   staleTime: 60_000,
@@ -46,7 +45,6 @@ const balanceRows = computed(() => {
   }))
 })
 
-// Хват эффективного баланса: balance + bonusBalance = effectiveBalance у бэка.
 const donut = computed(() => {
   if (!detail.value || detail.value.balances.effectiveBalance <= 0) return null
 
@@ -155,9 +153,9 @@ const otherServices = computed(
 const SERVICE_STATUS_LABELS: Record<string, string> = {
   active: 'Активна',
   deleted: 'Удалена',
-  stopped: 'Остановлена',
-  suspended: 'Приостановлена',
-  expired: 'Истекла',
+  prolong_wait: 'Ожидает оплаты',
+  suspended: 'Выключена',
+  blocked: 'Заблокирована',
 }
 
 const PAYMENT_TERM_LABELS: Record<string, string> = {
@@ -588,7 +586,7 @@ function formatDateTime(iso: string): string {
   flex-shrink: 0;
   text-align: right;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-h);
 }
 
@@ -737,15 +735,15 @@ function formatDateTime(iso: string): string {
   color: #5f6b7a;
 }
 
-.svc--stopped,
+.svc--prolong_wait,
 .svc--suspended {
   background: rgba(245, 158, 11, 0.18);
   color: #a16207;
 }
 
-.svc--expired {
-  background: rgba(59, 130, 246, 0.16);
-  color: #1d4ed8;
+.svc--blocked {
+  background: rgba(180, 60, 60, 0.5);
+  color: rgba(255, 60, 60, 0.8);
 }
 
 .tx--ok {
