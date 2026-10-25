@@ -467,9 +467,9 @@ function formatDateTime(iso: string): string {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: min(640px, 100%);
-  max-height: min(88vh, 760px);
-  padding: 24px;
+  width: min(820px, 100%);
+  max-height: min(92vh, 880px);
+  padding: 28px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -631,12 +631,13 @@ function formatDateTime(iso: string): string {
 /* Оценка риска: компактные статовые карточки. */
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 10px;
 }
 
 .stat {
-  padding: 10px 12px;
+  min-width: 0;
+  padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-muted);
@@ -649,12 +650,14 @@ function formatDateTime(iso: string): string {
   text-transform: uppercase;
 }
 
+/* Деньги длинные: переносим, а не выпускаем за край карточки. */
 .stat dd {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   color: var(--text-h);
   font-family: var(--mono);
-  font-size: 22px;
-  line-height: 1.2;
+  font-size: 18px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 /* Факторы риска: жёлто-оранжевая обводка из глобальных --danger-* переменных. */

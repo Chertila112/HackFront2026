@@ -39,14 +39,6 @@ const revenueAtRiskShare = computed(() => {
   return financials.revenueAtRisk / financials.totalMonthlyRecurringRevenue
 })
 
-const expectedLossShare = computed(() => {
-  const financials = summary.value?.financials
-
-  if (!financials || financials.revenueAtRisk <= 0) return null
-
-  return financials.expectedLoss / financials.revenueAtRisk
-})
-
 function percentText(share: number | null): string {
   return share === null ? '—' : `${Math.round(share * 100)}%`
 }
@@ -300,26 +292,6 @@ function formatDateTime(iso: string): string {
                 из
                 {{ formatMoney(summary.financials.totalMonthlyRecurringRevenue, analyticsCurrency) }}
                 MRR
-              </p>
-            </div>
-
-            <div class="kpi-row">
-              <div class="kpi-head">
-                <span>Ожидаемые потери от под риском</span>
-                <strong :class="{ 'kpi-alert': isOverFull(expectedLossShare) }">
-                  {{ percentText(expectedLossShare) }}
-                </strong>
-              </div>
-              <div class="kpi-track">
-                <div
-                  class="kpi-fill kpi-fill--loss"
-                  :style="{ width: barWidth(expectedLossShare) }"
-                />
-              </div>
-              <p class="muted kpi-caption">
-                {{ formatMoney(summary.financials.expectedLoss, analyticsCurrency) }}
-                из
-                {{ formatMoney(summary.financials.revenueAtRisk, analyticsCurrency) }}
               </p>
             </div>
           </div>
@@ -684,10 +656,6 @@ function formatDateTime(iso: string): string {
 
 .kpi-fill--risk {
   background: #ef4444;
-}
-
-.kpi-fill--loss {
-  background: #f59e0b;
 }
 
 .kpi-caption {
