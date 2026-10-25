@@ -43,4 +43,4 @@ bun run preview    # предпросмотр сборки
 
 Маршруты: `/login`, `/register`, `/` (таблица), `/analytics` — защищены navigation guard.
 
-Спецификация API: `v1.yaml`. Контракт realtime: `SIGNALR.md`.
+Спецификация API: `v1.yaml`.
