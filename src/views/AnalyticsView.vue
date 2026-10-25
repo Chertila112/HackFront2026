@@ -269,35 +269,30 @@ function formatDateTime(iso: string): string {
               <dd>{{ formatMoney(stat.value, analyticsCurrency) }}</dd>
             </div>
           </div>
-        </div>
 
-        <div class="panel summary-card">
-          <h3>Доход под риском</h3>
           <div class="kpi">
-            <div class="kpi-row">
-              <div class="kpi-head">
-                <span>Доля MRR под риском</span>
-                <strong :class="{ 'kpi-alert': isOverFull(revenueAtRiskShare) }">
-                  {{ percentText(revenueAtRiskShare) }}
-                </strong>
-              </div>
-              <div class="kpi-track">
-                <div
-                  class="kpi-fill kpi-fill--risk"
-                  :style="{ width: barWidth(revenueAtRiskShare) }"
-                />
-              </div>
-              <p class="muted kpi-caption">
-                {{ formatMoney(summary.financials.revenueAtRisk, analyticsCurrency) }}
-                из
-                {{ formatMoney(summary.financials.totalMonthlyRecurringRevenue, analyticsCurrency) }}
-                MRR
-              </p>
+            <div class="kpi-head">
+              <span>Доля MRR под риском</span>
+              <strong :class="{ 'kpi-alert': isOverFull(revenueAtRiskShare) }">
+                {{ percentText(revenueAtRiskShare) }}
+              </strong>
             </div>
+            <div class="kpi-track">
+              <div
+                class="kpi-fill kpi-fill--risk"
+                :style="{ width: barWidth(revenueAtRiskShare) }"
+              />
+            </div>
+            <p class="muted kpi-caption">
+              {{ formatMoney(summary.financials.revenueAtRisk, analyticsCurrency) }}
+              из
+              {{ formatMoney(summary.financials.totalMonthlyRecurringRevenue, analyticsCurrency) }}
+              MRR
+            </p>
           </div>
         </div>
 
-        <div class="panel summary-card">
+        <div class="panel summary-card wide">
           <h3>Причины риска</h3>
           <div v-if="reasons.length" class="reason-list">
             <div
@@ -615,11 +610,13 @@ function formatDateTime(iso: string): string {
   }
 }
 
-/* KPI-полосы: доля денег под риском. */
+/* KPI-полоса внутри карточки денег. */
 .kpi {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
 }
 
 .kpi-head {
