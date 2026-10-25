@@ -316,7 +316,7 @@ function formatDateTime(iso: string): string {
         </div>
 
         <div class="panel summary-card wide">
-          <h3>Клиенты под ударом</h3>
+          <h3>Клиенты с высоким коэффициентом риска</h3>
           <p v-if="topRiskQuery.isPending.value" class="muted">
             Загружаем клиентов…
           </p>
