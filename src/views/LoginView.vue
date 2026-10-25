@@ -147,7 +147,6 @@ function submit() {
   justify-content: center;
   gap: 6px;
   margin: 0;
-  font-size: 14px;
 }
 
 .switch-link-button {

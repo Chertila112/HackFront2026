@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { fetchAnalyticsSummary } from '../api/analytics'
+import { fetchCustomers } from '../api/customers'
+import CustomerDetailModal from '../components/CustomerDetailModal.vue'
 import { formatMoney } from '../lib/format'
 
 const summaryQuery = useQuery({
@@ -11,6 +13,57 @@ const summaryQuery = useQuery({
 
 
 const summary = computed(() => summaryQuery.data.value)
+
+const TOP_RISK_SIZE = 5
+
+const topRiskQuery = useQuery({
+  queryKey: ['customers', 'top-risk'],
+  queryFn: () =>
+    fetchCustomers({
+      cursorOn: 'riskScore',
+      sortDirection: 'desc',
+      takeAmount: TOP_RISK_SIZE,
+    }),
+})
+
+const topRiskCustomers = computed(() => topRiskQuery.data.value?.items ?? [])
+
+const selectedCustomerId = ref<number | null>(null)
+
+// Производные KPI: считаем из уже загруженных денег, бэк для этого не нужен.
+const revenueAtRiskShare = computed(() => {
+  const financials = summary.value?.financials
+
+  if (!financials || financials.totalMonthlyRecurringRevenue <= 0) return null
+
+  return financials.revenueAtRisk / financials.totalMonthlyRecurringRevenue
+})
+
+const expectedLossShare = computed(() => {
+  const financials = summary.value?.financials
+
+  if (!financials || financials.revenueAtRisk <= 0) return null
+
+  return financials.expectedLoss / financials.revenueAtRisk
+})
+
+function percentText(share: number | null): string {
+  return share === null ? '—' : `${Math.round(share * 100)}%`
+}
+
+function barWidth(share: number | null): string {
+  if (share === null) return '0%'
+
+  return `${Math.min(100, Math.max(2, Math.round(share * 100)))}%`
+}
+
+function riskScoreClass(score: number | null): string {
+  if (score === null) return 'top-score--none'
+  if (score >= 66) return 'top-score--high'
+  if (score >= 33) return 'top-score--medium'
+
+  return 'top-score--low'
+}
 
 const CURRENCY_LABELS = [
   { key: "EUR_CENTS", label: "Евроценты" },
@@ -220,7 +273,49 @@ function formatDateTime(iso: string): string {
           </div>
         </div>
 
-        <div class="panel summary-card wide">
+        <div class="panel summary-card">
+          <h3>Доход под риском</h3>
+          <div class="kpi">
+            <div class="kpi-row">
+              <div class="kpi-head">
+                <span>Доля MRR под риском</span>
+                <strong>{{ percentText(revenueAtRiskShare) }}</strong>
+              </div>
+              <div class="kpi-track">
+                <div
+                  class="kpi-fill kpi-fill--risk"
+                  :style="{ width: barWidth(revenueAtRiskShare) }"
+                />
+              </div>
+              <p class="muted kpi-caption">
+                {{ formatMoney(summary.financials.revenueAtRisk, analyticsCurrency) }}
+                из
+                {{ formatMoney(summary.financials.totalMonthlyRecurringRevenue, analyticsCurrency) }}
+                MRR
+              </p>
+            </div>
+
+            <div class="kpi-row">
+              <div class="kpi-head">
+                <span>Ожидаемые потери от под риском</span>
+                <strong>{{ percentText(expectedLossShare) }}</strong>
+              </div>
+              <div class="kpi-track">
+                <div
+                  class="kpi-fill kpi-fill--loss"
+                  :style="{ width: barWidth(expectedLossShare) }"
+                />
+              </div>
+              <p class="muted kpi-caption">
+                {{ formatMoney(summary.financials.expectedLoss, analyticsCurrency) }}
+                из
+                {{ formatMoney(summary.financials.revenueAtRisk, analyticsCurrency) }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel summary-card">
           <h3>Причины риска</h3>
           <div v-if="reasons.length" class="reason-list">
             <div
@@ -242,8 +337,48 @@ function formatDateTime(iso: string): string {
           </div>
           <p v-else class="muted">Причин пока нет — модель ещё не считала</p>
         </div>
+
+        <div class="panel summary-card wide">
+          <h3>Клиенты под ударом</h3>
+          <p v-if="topRiskQuery.isPending.value" class="muted">
+            Загружаем клиентов…
+          </p>
+          <p v-else-if="topRiskQuery.isError.value" class="muted">
+            Не удалось загрузить топ клиентов по риску
+          </p>
+          <ul v-else-if="topRiskCustomers.length" class="top-list">
+            <li
+              v-for="customer in topRiskCustomers"
+              :key="customer.id"
+            >
+              <button
+                type="button"
+                class="top-row"
+                @click="selectedCustomerId = customer.id"
+              >
+                <span
+                  class="top-score"
+                  :class="riskScoreClass(customer.riskScore)"
+                >
+                  {{ customer.riskScore ?? '—' }}
+                </span>
+                <span class="top-email">{{ customer.email }}</span>
+                <span class="top-money">
+                  {{ formatMoney(customer.revenueAtRisk, analyticsCurrency) }}
+                </span>
+              </button>
+            </li>
+          </ul>
+          <p v-else class="muted">Модель ещё не оценила ни одного клиента</p>
+        </div>
       </div>
     </template>
+
+    <CustomerDetailModal
+      :open="selectedCustomerId !== null"
+      :customer-id="selectedCustomerId"
+      @close="selectedCustomerId = null"
+    />
   </section>
 </template>
 
@@ -498,79 +633,143 @@ function formatDateTime(iso: string): string {
   }
 }
 
-/* Динамика оттока: парные бары факт/прогноз по периодам. */
-.churn-layout {
+/* KPI-полосы: доля денег под риском. */
+.kpi {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 18px;
 }
 
-.churn-chart {
+.kpi-head {
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  height: 160px;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text);
 }
 
-.churn-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
+.kpi-head strong {
+  color: var(--text-h);
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.kpi-track {
+  height: 10px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  overflow: hidden;
+}
+
+.kpi-fill {
   height: 100%;
+  border-radius: 999px;
 }
 
-.churn-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 100%;
+.kpi-fill--risk {
+  background: #ef4444;
 }
 
-.churn-bar {
-  width: 14px;
-  border-radius: 4px 4px 0 0;
+.kpi-fill--loss {
+  background: #f59e0b;
 }
 
-.churn-bar--fact {
-  background: var(--accent);
-}
-
-.churn-bar--forecast {
-  background: var(--danger-border);
-}
-
-.churn-period {
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.churn-legend {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-muted);
+.kpi-caption {
+  margin: 6px 0 0;
   font-size: 12px;
 }
 
-.churn-swatch {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+/* Топ клиентов под риском. */
+.top-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.churn-swatch--fact {
-  background: var(--accent);
+.top-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.churn-swatch--forecast {
-  background: var(--danger-border);
+.top-row:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
 }
 
-.churn-swatch:last-of-type {
-  margin-left: 14px;
+.top-score {
+  min-width: 48px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.top-score--high {
+  background: rgba(239, 68, 68, 0.16);
+  color: #dc2626;
+}
+
+.top-score--medium {
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+}
+
+.top-score--low {
+  background: rgba(34, 197, 94, 0.16);
+  color: #15803d;
+}
+
+.top-score--none {
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+.top-email {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-h);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-money {
+  flex-shrink: 0;
+  color: var(--text-h);
+  font-family: var(--mono);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .top-score--high {
+    color: #f87171;
+  }
+
+  .top-score--medium {
+    color: #fbbf24;
+  }
+
+  .top-score--low {
+    color: #4ade80;
+  }
 }
 </style>

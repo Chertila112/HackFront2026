@@ -41,13 +41,13 @@ defineProps<{
   flex-direction: column;
   gap: 20px;
   justify-self: end;
-  max-width: 380px;
+  max-width: 460px;
 }
 
 .brand-eyebrow {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -56,14 +56,15 @@ defineProps<{
 .brand-title {
   margin: 0;
   color: var(--text-h);
-  font-size: clamp(30px, 4vw, 40px);
+  font-size: clamp(40px, 5vw, 56px);
   letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .brand-subtitle {
-  margin: 10px 0 0;
+  margin: 14px 0 0;
   color: var(--text);
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1.6;
 }
 
@@ -77,6 +78,28 @@ defineProps<{
 .auth-panel {
   justify-self: start;
   width: min(100%, 400px);
+}
+
+/* Единая крупная типографика форм: и логин, и регистрация заполняют слот,
+   поэтому стили добираются через :deep. */
+.auth-panel :deep(.field) {
+  font-size: 16px;
+}
+
+.auth-panel :deep(.form-error) {
+  font-size: 15px;
+}
+
+.auth-panel :deep(.field-error) {
+  font-size: 14px;
+}
+
+.auth-panel :deep(.auth-submit) {
+  font-size: 16px;
+}
+
+.auth-panel :deep(.switch-link) {
+  font-size: 15px;
 }
 
 /* На узких экранах — колонкой, разделитель горизонтальный. */
