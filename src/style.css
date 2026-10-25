@@ -9,9 +9,9 @@
   --text-muted: #8a8a8a;
 
   /* Фоны и поверхности */
-  --bg: #4cc6f1;
-  --surface: #4cc6f1;
-  --surface-muted: #4bb6a1;
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --surface-muted: #e9edf1;
 
   /* Границы и код */
   --border: #dedede;
