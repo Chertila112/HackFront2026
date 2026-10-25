@@ -5,7 +5,6 @@ import {
   AUTH_LOGIN_PATH,
   AUTH_LOGOUT_PATH,
   AUTH_ME_PATH,
-  AUTH_REGISTER_PATH,
   AUTH_SESSION_PATH,
 } from './endpoints'
 import { apiRequest } from './http'
@@ -36,10 +35,3 @@ export async function logout(): Promise<void> {
   })
 }
 
-export function register(credentials: LoginCredentials): Promise<AuthSession> {
-  return apiRequest(AUTH_REGISTER_PATH, authSessionSchema, {
-    method: 'POST',
-    body: credentials,
-    auth: false,
-  })
-}

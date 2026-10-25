@@ -16,17 +16,6 @@ const form = reactive({
   password: 'admin123',
 })
 
-const redirectQuery =
-  typeof route.query.redirect === 'string' &&
-  route.query.redirect.startsWith('/') &&
-  !route.query.redirect.startsWith('//')
-    ? route.query.redirect
-    : null
-
-const registerTo = redirectQuery
-  ? { path: '/register', query: { redirect: redirectQuery } }
-  : { path: '/register' }
-
 const validationError = ref<string | null>(null)
 
 const mutation = useMutation({
@@ -113,13 +102,6 @@ function submit() {
       >
         {{ mutation.isPending.value ? 'Вход…' : 'Войти' }}
       </button>
-
-      <p class="switch-link">
-        <span>Нет аккаунта?</span>
-        <RouterLink :to="registerTo" class="switch-link-button">
-          Зарегистрироваться
-        </RouterLink>
-      </p>
     </form>
   </AuthSplit>
 </template>
