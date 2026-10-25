@@ -203,6 +203,7 @@ function formatDateTime(iso: string): string {
         aria-modal="true"
         aria-labelledby="customer-detail-title"
       >
+        <div class="detail-scroll">
         <div class="modal-head">
           <h2 id="customer-detail-title">
             {{ detail?.email ?? `Клиент #${customerId}` }}
@@ -447,6 +448,7 @@ function formatDateTime(iso: string): string {
             <p v-else class="muted">Транзакций нет</p>
           </section>
         </template>
+        </div>
       </div>
     </div>
   </Teleport>
@@ -466,15 +468,50 @@ function formatDateTime(iso: string): string {
 .detail-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
   width: min(820px, 100%);
   max-height: min(92vh, 880px);
-  padding: 28px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow);
+  /* Скроллбар живёт в .detail-scroll: card не скроллится и режет его
+     по скруглённым углам, поэтому бар не вылезает за границы. */
+  overflow: hidden;
+}
+
+.detail-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  padding: 28px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c9cfd6 transparent;
+}
+
+.detail-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.detail-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.detail-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #c9cfd6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .detail-scroll {
+    scrollbar-color: #3a3a3a transparent;
+  }
+
+  .detail-scroll::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+  }
 }
 
 .modal-head {
