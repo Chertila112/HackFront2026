@@ -1,6 +1,6 @@
-# HackFront 2026
+# churn-dashboard
 
-SPA на Vue 3 + TypeScript для HackBack 2026: авторизация (JWT + refresh-cookie), таблица клиентов с оценкой риска оттока, курсорная пагинация, сортировка и live-обновления через SignalR.
+SPA на Vue 3 + TypeScript: авторизация (JWT + refresh-cookie), таблица клиентов с оценкой риска оттока, курсорная пагинация, сортировка, live-обновления через SignalR и сводная аналитика.
 
 ## Стек
 

@@ -156,14 +156,24 @@ function submit() {
   box-shadow: var(--shadow);
 }
 
+/* Крупнее базового: форма регистрации — главный экран знакомства. */
+.auth-card .field {
+  font-size: 16px;
+}
+
+.auth-card .form-error {
+  font-size: 15px;
+}
+
 .field-error {
   margin: -6px 0 0;
   color: var(--danger);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .auth-submit {
   width: 100%;
+  font-size: 16px;
 }
 
 .switch-link {
@@ -171,7 +181,7 @@ function submit() {
   justify-content: center;
   gap: 6px;
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .switch-link-button {

@@ -8,9 +8,8 @@ defineProps<{
 <template>
   <main class="auth-page">
     <section class="auth-brand">
-      <div class="brand-mark" aria-hidden="true">HB</div>
       <div class="brand-text">
-        <p class="brand-eyebrow">HackBack 2026</p>
+        <p class="brand-eyebrow">churn-dashboard</p>
         <h1 class="brand-title">{{ title }}</h1>
         <p v-if="subtitle" class="brand-subtitle">{{ subtitle }}</p>
       </div>
@@ -36,28 +35,13 @@ defineProps<{
   background: var(--bg);
 }
 
-/* Левая колонка с заглушкой логотипа и надписью. */
+/* Левая колонка с брендом. */
 .auth-brand {
   display: flex;
   flex-direction: column;
   gap: 20px;
   justify-self: end;
   max-width: 380px;
-}
-
-/* Заглушка логотипа. */
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 68px;
-  height: 68px;
-  border-radius: var(--radius-lg);
-  background: var(--accent);
-  color: var(--accent-contrast);
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  box-shadow: var(--button-shadow);
 }
 
 .brand-eyebrow {

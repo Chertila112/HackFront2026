@@ -2,7 +2,7 @@ import { computed, reactive } from 'vue'
 import { authSessionSchema } from '../schemas/auth'
 import type { AuthSession, User } from '../types/auth'
 
-const STORAGE_KEY = 'hackback_session'
+const STORAGE_KEY = 'churn_dashboard_session'
 
 interface AuthState {
   accessToken: string | null

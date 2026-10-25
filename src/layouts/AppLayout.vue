@@ -23,7 +23,7 @@ async function logout() {
 <template>
   <div class="app-shell">
     <header class="app-header">
-      <RouterLink class="brand" to="/">HackFront</RouterLink>
+      <RouterLink class="brand" to="/">churn-dashboard</RouterLink>
 
       <nav class="app-nav" aria-label="Основная навигация">
         <RouterLink to="/" exact-active-class="is-active">Главная</RouterLink>

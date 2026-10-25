@@ -110,35 +110,8 @@ function reasonWidth(count: number): string {
   return `${Math.max(2, Math.round((count / reasonsMax.value) * 100))}%`
 }
 
-const churnRows = computed(() => summary.value?.churnDynamics ?? [])
-
-const churnMax = computed(() =>
-  Math.max(
-    1,
-    ...churnRows.value.flatMap((row) => [row.factDeleted, row.forecastRisk]),
-  ),
-)
-
-function churnHeight(value: number): string {
-  return `${Math.max(2, Math.round((value / churnMax.value) * 100))}%`
-}
-
-const MONTH_LABELS = [
-  'янв', 'фев', 'мар', 'апр', 'май', 'июн',
-  'июл', 'авг', 'сен', 'окт', 'ноя', 'дек',
-]
-
 // Периоды приходят строкой ('2025-10' или дата) — красиво форматируем месяцы,
 // остальное показываем как есть.
-function formatPeriod(period: string): string {
-  const monthly = /^(\d{4})-(\d{2})$/.exec(period)
-
-  if (!monthly) return period
-
-  const monthIndex = Number(monthly[2]) - 1
-
-  return MONTH_LABELS[monthIndex] ?? period
-}
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('ru-RU', {
@@ -179,7 +152,7 @@ function formatDateTime(iso: string): string {
 
     <template v-else-if="summary">
       <p class="meta-line muted">
-        Данные на {{ formatDateTime(summary.lastCalculatedAt) }} · валюта
+        Данные на {{ formatDateTime(summary.lastCalculatedAt) }} · валюта:
         {{ currencyLabel }}
       </p>
 
@@ -268,41 +241,6 @@ function formatDateTime(iso: string): string {
             </div>
           </div>
           <p v-else class="muted">Причин пока нет — модель ещё не считала</p>
-        </div>
-
-        <div class="panel summary-card wide">
-          <h3>Динамика оттока</h3>
-          <div v-if="churnRows.length" class="churn-layout">
-            <div class="churn-chart">
-              <div
-                v-for="row in churnRows"
-                :key="row.period"
-                class="churn-col"
-              >
-                <div class="churn-bars">
-                  <div
-                    class="churn-bar churn-bar--fact"
-                    :style="{ height: churnHeight(row.factDeleted) }"
-                    :title="`Факт: ${row.factDeleted}`"
-                  />
-                  <div
-                    class="churn-bar churn-bar--forecast"
-                    :style="{ height: churnHeight(row.forecastRisk) }"
-                    :title="`Прогноз: ${row.forecastRisk}`"
-                  />
-                </div>
-                <span class="churn-period muted">
-                  {{ formatPeriod(row.period) }}
-                </span>
-              </div>
-            </div>
-
-            <div class="churn-legend">
-              <span class="churn-swatch churn-swatch--fact" /> факт
-              <span class="churn-swatch churn-swatch--forecast" /> прогноз
-            </div>
-          </div>
-          <p v-else class="muted">Динамики пока нет</p>
         </div>
       </div>
     </template>
@@ -440,8 +378,8 @@ function formatDateTime(iso: string): string {
 }
 
 .risk-dot {
-  width: 10px;
-  height: 10px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   flex-shrink: 0;
 }
@@ -465,13 +403,14 @@ function formatDateTime(iso: string): string {
 .risk-label {
   flex: 1;
   color: var(--text);
+  font-size: 16px;
   min-width: 0;
 }
 
 .risk-stats {
   color: var(--text-h);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 16px;
   white-space: nowrap;
 }
 
