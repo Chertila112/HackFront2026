@@ -51,6 +51,12 @@ function percentText(share: number | null): string {
   return share === null ? '—' : `${Math.round(share * 100)}%`
 }
 
+// Больше 100% бывает только на кривых данных модели — подсвечиваем,
+// но не прячем: полоса зажата на 100%, а цифра показывает правду.
+function isOverFull(share: number | null): boolean {
+  return share !== null && share > 1
+}
+
 function barWidth(share: number | null): string {
   if (share === null) return '0%'
 
@@ -279,7 +285,9 @@ function formatDateTime(iso: string): string {
             <div class="kpi-row">
               <div class="kpi-head">
                 <span>Доля MRR под риском</span>
-                <strong>{{ percentText(revenueAtRiskShare) }}</strong>
+                <strong :class="{ 'kpi-alert': isOverFull(revenueAtRiskShare) }">
+                  {{ percentText(revenueAtRiskShare) }}
+                </strong>
               </div>
               <div class="kpi-track">
                 <div
@@ -298,7 +306,9 @@ function formatDateTime(iso: string): string {
             <div class="kpi-row">
               <div class="kpi-head">
                 <span>Ожидаемые потери от под риском</span>
-                <strong>{{ percentText(expectedLossShare) }}</strong>
+                <strong :class="{ 'kpi-alert': isOverFull(expectedLossShare) }">
+                  {{ percentText(expectedLossShare) }}
+                </strong>
               </div>
               <div class="kpi-track">
                 <div
@@ -653,6 +663,10 @@ function formatDateTime(iso: string): string {
   font-family: var(--mono);
   font-size: 20px;
   font-weight: 700;
+}
+
+.kpi-head strong.kpi-alert {
+  color: var(--danger);
 }
 
 .kpi-track {
